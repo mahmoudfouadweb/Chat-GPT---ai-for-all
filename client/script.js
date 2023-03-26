@@ -20,9 +20,6 @@ function preLoader(element) {
   // console.log(loadInteval);
 }
 
-// Chat Pre-Loader RUN
-// preLoader(chatContainer);
-
 ////////////////////////////
 //
 function typeText(element, text) {
@@ -38,8 +35,6 @@ function typeText(element, text) {
   }, 40);
 }
 
-
-
 ////////////////////////////
 // Generate Uniqe Id
 function generateUniqeId() {
@@ -51,6 +46,8 @@ function generateUniqeId() {
 
 generateUniqeId();
 
+////////////////////////////
+// Generate chat Stripe
 function chatStripe(isAi, value, UniqeId) {
   return `
   <div class='wrapper ${isAi && "ai"}'>
@@ -68,6 +65,8 @@ function chatStripe(isAi, value, UniqeId) {
   `;
 }
 
+////////////////////////////
+// Submit action
 const handleSubmit = async (e) => {
   e.preventDefault();
 
@@ -80,15 +79,44 @@ const handleSubmit = async (e) => {
 
   // Bot Stripe
   const uniqeId = generateUniqeId();
-  chatContainer.innerHTML += chatStripe(true, ' ', uniqeId)
-  
+  chatContainer.innerHTML += chatStripe(true, " ", uniqeId);
+
   chatContainer.scrollTop = chatContainer.scrollHeight;
   const messageDiv = document.getElementById(uniqeId);
-  
-  preLoader(messageDiv)
+
+  preLoader(messageDiv);
+
+  ////////////////////////////
+  // fetch data from server -> bot's response
+
+  const response = await fetch("http://localhost:5000", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt: data.get("prompt"),
+    }),
+  });
+
+  clearInterval(loadInteval);
+  messageDiv.innerHTML = "";
+
+  if (response.ok) {
+    const data = await response.json();
+    const parsedData = data.bot.trim();
+
+    typeText(messageDiv, parsedData);
+  } else {
+    const err = await response.text();
+
+    messageDiv.innerHTML = "Something went wrong";
+
+    alert(err);
+  }
 };
 
-form.addEventListener('submit', handleSubmit)
-form.addEventListener('keyup', e => {
-  if(e.keyCode === 13) handleSubmit(e)
-})
+form.addEventListener("submit", handleSubmit);
+form.addEventListener("keyup", (e) => {
+  if (e.keyCode === 13) handleSubmit(e);
+});
